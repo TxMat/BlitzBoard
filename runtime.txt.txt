@@ -1,1 +1,1 @@
-py -m flask --app flaskr run
+python3 -m flask --app flaskr run
