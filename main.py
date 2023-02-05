@@ -34,7 +34,7 @@ def get_player(id):
         if player is not None:
             return jsonify(player.to_dic())
         else:
-            return jsonify({"ok": 1}), 200
+            return json_error(400, "The player id is not in the database")
     else:
         database.remove_player(id)
         return jsonify({"ok": 0}), 200
@@ -89,6 +89,10 @@ def set_score():
     else:
         return jsonify({"ok": 0}), 200
 
+# Used only if there is a problem
+@app.route('/hardreinit', methods=['GET'])
+def reinit_database():
+    database.clear_database()
 
 if __name__ == '__main__':
     # Threaded option to enable multiple instances for multiple user access support
