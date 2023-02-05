@@ -24,7 +24,7 @@ def get_players():
     else:
         if request.method == "DELETE":
             database.remove_all_players()
-            return 200
+            return jsonify({"ok": 0}), 200
 
 
 @app.route('/players/byId/<id>', methods=['GET', "DELETE"])
@@ -34,11 +34,10 @@ def get_player(id):
         if player is not None:
             return jsonify(player.to_dic())
         else:
-            return
+            return jsonify({"ok": 1}), 200
     else:
         database.remove_player(id)
-        return 200
-
+        return jsonify({"ok": 0}), 200
 
 
 @app.route('/players/create', methods=['POST'])
@@ -87,6 +86,8 @@ def set_score():
     is_ok = database.set_score_to_player(player_id, player_score)
     if not is_ok:
         return json_error(500, "can't set the score")
+    else:
+        return jsonify({"ok": 0}), 200
 
 
 if __name__ == '__main__':
