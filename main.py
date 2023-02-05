@@ -95,8 +95,8 @@ def set_score():
         new_score = player_score
     else:
         return json_error(400, "The operation \""+ operation +"\" doesn't exist")
-    
-    is_ok = database.set_score_to_player(player_id, player_score)
+
+    is_ok = database.set_score_to_player(player_id, new_score)
     if not is_ok:
         return json_error(500, "can't set the score")
     else:
