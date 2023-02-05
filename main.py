@@ -77,12 +77,25 @@ def set_score():
 
     if "score" not in request_data:
         return json_error(400, "Data in the body need a column \"score\"")
-
     player_score = request_data["score"]
+
+    if "operation" not in request_data:
+        return json_error(400, "Data in the body need a column \"operation\"")
+    operation = request_data["operation"]
 
     if not database.player_exist(player_id):
         return json_error(400, "The player with the id :" + str(player_id) + "doesn't exist")
 
+    current_player = database.get_player(player_id)
+    if operation == "ADD":
+        new_score = current_player.score + player_score
+    elif operation == "SUB":
+        new_score = current_player.score - player_score
+    elif operation == "SET":
+        new_score = player_score
+    else:
+        return json_error(400, "The operation \""+ operation +"\" doesn't exist")
+    
     is_ok = database.set_score_to_player(player_id, player_score)
     if not is_ok:
         return json_error(500, "can't set the score")
