@@ -45,7 +45,7 @@ def create_player():
     request_data: dict = request.get_json(force=True, silent=True)
     if request_data is None:
         return json_error(400, "Json is not encoded correctly")
-    if "name" not in request_data:
+    if "name" not in request_data or request_data["name"] is "":
         return json_error(400, "Data in the body need a column \"name\"")
     name = request_data["name"]
     if "score" in request_data:
