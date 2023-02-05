@@ -13,22 +13,29 @@ def json_error(error_code: int, error_message: str):
     }), error_code
 
 
-@app.route('/players/all', methods=['GET'])
+@app.route('/players/all', methods=['GET', "DELETE"])
 def get_players():
-    players = database.get_players()
-    players_dic_array = []
-    for player in players:
-        players_dic_array.append(player.to_dic())
-    return jsonify(players_dic_array)
-
-
-@app.route('/players/byId/<id>', methods=['GET'])
-def get_player(id):
-    player = database.get_player(id)
-    if player is not None:
-        return jsonify(player.to_dic())
+    if request.method == "GET":
+        players = database.get_players()
+        players_dic_array = []
+        for player in players:
+            players_dic_array.append(player.to_dic())
+        return jsonify(players_dic_array)
     else:
-        return
+        if request.method == "DELETE":
+            database.remove_all_players()
+
+
+@app.route('/players/byId/<id>', methods=['GET', "DELETE"])
+def get_player(id):
+    if request.method == "GET":
+        player = database.get_player(id)
+        if player is not None:
+            return jsonify(player.to_dic())
+        else:
+            return
+    else:
+        database.remove_player(id)
 
         # TODO Need to be post after
 
