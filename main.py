@@ -24,6 +24,7 @@ def get_players():
     else:
         if request.method == "DELETE":
             database.remove_all_players()
+            return 200
 
 
 @app.route('/players/byId/<id>', methods=['GET', "DELETE"])
@@ -36,8 +37,8 @@ def get_player(id):
             return
     else:
         database.remove_player(id)
+        return 200
 
-        # TODO Need to be post after
 
 
 @app.route('/players/create', methods=['POST'])
@@ -84,7 +85,8 @@ def set_score():
         return json_error(400, "The player with the id :" + str(player_id) + "doesn't exist")
 
     is_ok = database.set_score_to_player(player_id, player_score)
-    return jsonify({"ok": is_ok}), 200
+    if not is_ok:
+        return json_error(500, "can't set the score")
 
 
 if __name__ == '__main__':
