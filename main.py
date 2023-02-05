@@ -13,15 +13,6 @@ def json_error(error_code: int, error_message: str):
     }), error_code
 
 
-@app.route('/')
-def index():
-    # A welcome message to test our server
-    return "<h1>salut los bg Welcome to our medium-greeting-api!</h1>"
-
-    # a simple page that says hello
-
-
-
 @app.route('/players/all', methods=['GET'])
 def get_players():
     players = database.get_players()
@@ -42,7 +33,7 @@ def get_player(id):
         # TODO Need to be post after
 
 
-@app.route('/players/create/', methods=['POST'])
+@app.route('/players/create', methods=['POST'])
 def create_player():
     request_data: dict = request.get_json(force=True, silent=True)
     if request_data is None:

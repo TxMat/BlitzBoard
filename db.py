@@ -80,7 +80,7 @@ class GameDatabase(BaseDatabase):
             users_obj.append(Player(user[0], user[1], user[2]))
         return users_obj
 
-    def player_exist(self, id_player : int) -> bool:
+    def player_exist(self, id_player: int) -> bool:
         return self.get_player(id_player) is not None
 
     def remove_player(self, id_player: int) -> bool:
@@ -89,10 +89,7 @@ class GameDatabase(BaseDatabase):
         return remove_from_leaderboards and remove_from_player
 
     def remove_all_players(self):
-        all_executed: bool = true
-        for user in self.get_players():
-            all_executed &= self.remove_player(user.id)
-        return all_executed
+        return self.execute("DELETE FROM leaderboards", ())
 
     # Leaderboards management
     def set_score_to_player(self, player_id: int, score: int) -> bool:
@@ -109,15 +106,3 @@ class GameDatabase(BaseDatabase):
         scores = self.query("SELECT * from leaderboards WHERE id_player=?", (player_id,))
         return len(scores) == 1
 
-    def remove_player_from_leaderboards(self, player_id: int) -> bool:
-        return self.execute("DELETE FROM leaderboards WHERE id_player =?", (player_id,))
-
-
-def main():
-    mydb = GameDatabase(".")
-    heloo = mydb.create_player("ez")
-    print(heloo)
-
-
-if __name__ == '__main__':
-    main()
