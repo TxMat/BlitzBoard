@@ -1,5 +1,5 @@
 import sqlite3
-import os.path
+import os.path, os.remove
 
 
 class Player:
@@ -30,7 +30,8 @@ class BaseDatabase:
         connection.close()
 
     def clear_database(self):
-        self.__initialize_database();
+        os.remove(self.__db_path)
+        self.__initialize_database()
 
     def __del__(self):
         self.connection.close()
