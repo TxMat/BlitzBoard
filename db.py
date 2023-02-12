@@ -33,7 +33,8 @@ class BaseDatabase:
         self.__initialize_database()
 
     def __del__(self):
-        self.connection.close()
+        if self.connection:
+            self.connection.close()
 
     def query(self, request: str, values: list = ()) -> list:
         rep = self.connection.execute(request, values)
