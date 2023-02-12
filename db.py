@@ -32,9 +32,7 @@ class BaseDatabase:
     def clear_database(self):
         self.__initialize_database()
 
-    def __del__(self):
-        if self.connection:
-            self.connection.close()
+
 
     def query(self, request: str, values: list = ()) -> list:
         rep = self.connection.execute(request, values)
