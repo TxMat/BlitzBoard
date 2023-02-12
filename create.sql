@@ -1,9 +1,6 @@
 DROP TABLE IF EXISTS player;
 DROP TABLE IF EXISTS leaderboards;
 
-
-
-
 CREATE TABLE player (
     /* Will be an uuid  */
     id_player INTEGER PRIMARY KEY AUTOINCREMENT,

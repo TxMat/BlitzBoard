@@ -16,7 +16,8 @@ class BaseDatabase:
     def __init__(self, path: str = "."):
         self.__db_path = path + "/database.db"
         self.__sql_path = path + "/create.sql"
-
+        if not os.path.isfile(self.__db_path):
+            self.__initialize_database()
         self.connection = sqlite3.connect(self.__db_path, check_same_thread=False)
 
     def __initialize_database(self):
