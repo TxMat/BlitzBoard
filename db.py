@@ -16,8 +16,7 @@ class BaseDatabase:
     def __init__(self, path: str = "."):
         self.__db_path = path + "/database.db"
         self.__sql_path = path + "/create.sql"
-        if not os.path.isfile(self.__db_path):
-            self.__initialize_database()
+        self.__initialize_database()
         self.connection = sqlite3.connect(self.__db_path, check_same_thread=False)
 
     def __initialize_database(self):
@@ -73,8 +72,8 @@ class GameDatabase(BaseDatabase):
 
     def get_players(self) -> list[Player]:
         users_obj = list()
-        users = self.query(
-            "SELECT p.id_player, p.name, l.score from player p, leaderboards l where l.id_player = p.id_player ORDER BY l.score DESC")
+        users = self.query( "SELECT p.id_player, p.name, l.score from player p, leaderboards l where l.id_player = p.id_player ORDER BY l.score DESC")
+
         for user in users:
             users_obj.append(Player(user[0], user[1], user[2]))
         return users_obj
