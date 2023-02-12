@@ -3,7 +3,7 @@ import os.path
 
 
 class Player:
-    def __init__(self, id: int, name: str, score: int | None):
+    def __init__(self, id: int, name: str, score: int = 0):
         self.id = id
         self.name = name
         self.score = score
@@ -16,8 +16,7 @@ class BaseDatabase:
     def __init__(self, path: str = "."):
         self.__db_path = path + "/database.db"
         self.__sql_path = path + "/create.sql"
-        if not os.path.isfile(self.__db_path):
-            self.__initialize_database()
+
         self.connection = sqlite3.connect(self.__db_path, check_same_thread=False)
 
     def __initialize_database(self):
@@ -51,7 +50,7 @@ class GameDatabase(BaseDatabase):
     # Players management
 
     # Create a player and an other inside the leaderboards
-    def create_player(self, name: str) -> int | None:
+    def create_player(self, name: str):
         users_number = self.query("SELECT * from player", ())
         user_id = len(users_number) + 1
         self.execute("INSERT INTO player(id_player,name) VALUES(?,?)", (user_id, name))
