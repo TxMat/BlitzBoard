@@ -75,7 +75,7 @@ class GameDatabase(BaseDatabase):
     def get_players(self) -> list[Player]:
         users_obj = list()
         users = self.query(
-            "SELECT p.id_player, p.name, l.score from player p, leaderboards l where l.id_player = p.id_player ORDER BY l.score")
+            "SELECT p.id_player, p.name, l.score from player p, leaderboards l where l.id_player = p.id_player ORDER BY l.score DESC")
         for user in users:
             users_obj.append(Player(user[0], user[1], user[2]))
         return users_obj

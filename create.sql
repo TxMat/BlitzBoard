@@ -1,3 +1,5 @@
+/*
+
 DROP TABLE IF EXISTS player;
 DROP TABLE IF EXISTS leaderboards;
 
@@ -17,3 +19,4 @@ CREATE TABLE leaderboards (
   FOREIGN KEY (id_player) REFERENCES player(id_player)
 
 );
+*/
