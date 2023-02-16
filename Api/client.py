@@ -1,9 +1,9 @@
 from flask import Flask, jsonify, request
-import db
+from Api.db import db
 
 app = Flask(__name__)
 
-database = db.GameDatabase(".")
+database = db.GameDatabase("..")
 
 
 def json_error(error_code: int, error_message: str):
