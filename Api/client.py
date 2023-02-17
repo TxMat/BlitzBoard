@@ -2,7 +2,7 @@ import json
 
 import peewee
 from flask import Flask, jsonify
-from flask_restx import Api, Resource, reqparse
+from flask_restx import Api, Resource, reqparse, fields
 from playhouse.sqlite_ext import JSONField
 
 app = Flask(__name__)
@@ -53,7 +53,6 @@ class Score(BaseModel):
 class Players(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('id', type=str, location='form', required=True)
-    parser.add_argument('name', type=str, location='form', required=True)
 
     @api.expect(parser)
     @api.doc(params={
@@ -80,6 +79,8 @@ class Players(Resource):
 
         return "Player created", 201
 
+    parser.add_argument('name', type=str, location='form', required=True)
+
     def get(self):
         players = Player.select()
         players_dic_array = []
@@ -91,7 +92,10 @@ class Players(Resource):
 @api.route('/players/<string:player_id>/scores', methods=['GET', 'DELETE'])
 class PlayerScores(Resource):
 
-    @api.response(200, 'Player scores fetched')
+    @api.response(200, 'Player scores fetched', fields.String(example={
+        "template_key_1": "template_value_1",
+        "template_key_2": "template_value_2",
+    }))
     @api.response(404, 'Player does not exist')
     def get(self, player_id):
         try:
