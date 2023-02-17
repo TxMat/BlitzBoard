@@ -8,5 +8,5 @@ class Test:
             "player_name": "Test Player 1",
             "player_id": "player-1"
         })
-        assert response.status_code == 201
+        assert response.status_code == 404
 

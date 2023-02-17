@@ -1,3 +1,5 @@
+import json
+
 import peewee
 from flask import Flask, jsonify
 from flask_restx import Api, Resource, reqparse
@@ -22,7 +24,7 @@ class BaseModel(peewee.Model):
 
 class Config(BaseModel):
     template = JSONField()
-    weight_list = JSONField()
+    weight_list = JSONField(null=True)
 
 
 class Game(BaseModel):
@@ -34,7 +36,11 @@ class Game(BaseModel):
 class Player(BaseModel):
     id = peewee.UUIDField(primary_key=True, unique=True)
     name = peewee.CharField()
-    games = peewee.ManyToManyField(Game, backref='players')
+
+
+class PlayerGame(BaseModel):
+    player = peewee.ForeignKeyField(Player)
+    game = peewee.ForeignKeyField(Game)
 
 
 class Score(BaseModel):
@@ -165,12 +171,12 @@ class Games(Resource):
 
         # check if game already exists if not create it
         try:
-            config = Config.create(config=config)
+            config = Config.create(template=config)
             Game.create(id=game_id, name=name, config=config)
         except peewee.IntegrityError:
             return "Game already exists", 400
 
-        return 200
+        return "Game created", 200
 
     def get(self):
         games = Game.select()
@@ -235,7 +241,10 @@ class Scores(Resource):
         data = self.parser.parse_args()
 
         player_id = data["player_id"]
-        score = data["score"]
+        try:
+            score = json.loads(data["score"])
+        except json.decoder.JSONDecodeError:
+            return "Invalid score", 400
 
         if not (gameid and player_id and score):
             return "Invalid request", 400
@@ -248,31 +257,31 @@ class Scores(Resource):
             return "Player or game does not exist", 400
 
         # check if given score has the same json keys as the config
-        config = game.config.template
+        config = json.loads(game.config.template)
         if not all(key in config for key in score):
             return "Invalid score", 400
 
         # check if player has already played the game
         # if not add the player to the game
-        if player not in game.players:
-            game.players.add(player)
-            game.save()
+        try:
+            PlayerGame.get(player=player, game=game)
+        except peewee.DoesNotExist:
+            PlayerGame.create(player=player, game=game)
 
         # fetch player scores for the given game if any
         try:
+            # using the config template compare the current score with the previous score
+            # if the current score is better update the score
             player_score = Score.get(player=player, game=game)
-            player_score.score = score
-            player_score.save()
+            for key in json.loads(game.config.template):
+                if score[key] > player_score.score[key]:
+                    player_score.score = score
+                    player_score.save()
         except peewee.DoesNotExist:
             Score.create(player=player, game=game, score=score)
             return 200
 
-        # using the config template compare the current score with the previous score
-        # if the current score is better update the score
-        for key in game.config.template:
-            if score[key] > player_score.score[key]:
-                player_score.score = score
-                player_score.save()
+
 
         return 200
 
@@ -369,6 +378,6 @@ class PlayerScore(Resource):
 
 if __name__ == '__main__':
     # Create the database
-    db.create_tables([Game, Player, Score, Config])
+    db.create_tables([Game, Player, Score, Config, PlayerGame])
     # Threaded option to enable multiple instances for multiple user access support
     app.run(host="127.0.0.1", threaded=True, port=5000)
