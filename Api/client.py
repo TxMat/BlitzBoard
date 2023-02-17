@@ -54,6 +54,9 @@ class Players(Resource):
         'id': 'UUID of the player',
         'name': 'Name of the player',
     })
+    @api.response(200, 'Player created')
+    @api.response(201, 'Player already exists')
+    @api.response(400, 'Invalid request')
     def post(self):
         data = self.parser.parse_args()
 
@@ -78,6 +81,9 @@ class Players(Resource):
             players_dic_array.append(player.to_dic())
         return jsonify(players_dic_array)
 
+    @api.expect(parser)
+    @api.response(200, 'Player deleted')
+    @api.response(400, 'Invalid request')
     def delete(self):
         data = self.parser.parse_args()
         player_id = data["id"]
@@ -91,6 +97,9 @@ class Players(Resource):
 
         return "Player deleted", 200
 
+    @api.expect(parser)
+    @api.response(200, 'Player updated')
+    @api.response(400, 'Invalid request')
     def update(self):
         data = self.parser.parse_args()
         player_id = data["id"]
@@ -106,14 +115,27 @@ class Players(Resource):
         return "Player updated", 200
 
 
-@api.route('/players/<string:player_id>/scores', methods=['GET'])
+@api.route('/players/<string:player_id>/scores', methods=['GET', 'DELETE'])
 class PlayerScores(Resource):
+
+    @api.response(200, 'Player scores')
+    @api.response(400, 'Invalid request')
     def get(self, player_id):
         scores = Score.select().where(Score.player == player_id)
         scores_dic_array = []
         for score in scores:
             scores_dic_array.append(score.to_dic())
         return jsonify(scores_dic_array)
+
+    @api.response(200, 'Player scores deleted')
+    @api.response(400, 'Invalid request')
+    def delete(self, player_id):
+        try:
+            Score.delete().where(Score.player == player_id).execute()
+        except peewee.IntegrityError:
+            return "Player does not exist", 400
+
+        return "Player scores deleted", 200
 
 
 @api.route('/games', methods=['GET', 'POST', 'DELETE', 'UPDATE'])
@@ -129,6 +151,8 @@ class Games(Resource):
         'name': 'Name of the game',
         'config': 'json formatted config for the game',
     })
+    @api.response(200, 'Game created')
+    @api.response(400, 'Invalid request')
     def post(self):
         data = self.parser.parse_args()
 
@@ -159,6 +183,9 @@ class Games(Resource):
             })
         return games_dic_array
 
+    @api.expect(parser)
+    @api.response(200, 'Game deleted')
+    @api.response(400, 'Invalid request')
     def delete(self):
         data = self.parser.parse_args()
         game_id = data["id"]
@@ -172,6 +199,9 @@ class Games(Resource):
 
         return "Game deleted", 200
 
+    @api.expect(parser)
+    @api.response(200, 'Game updated')
+    @api.response(400, 'Invalid request')
     def update(self):
         data = self.parser.parse_args()
         game_id = data["id"]
@@ -188,7 +218,7 @@ class Games(Resource):
         return "Game updated", 200
 
 
-@api.route('/games/<string:gameid>/scores', methods=['GET', 'POST'])
+@api.route('/games/<string:gameid>/scores', methods=['GET', 'POST', 'DELETE'])
 class Scores(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('player_id', type=str, location='form', required=True)
@@ -199,6 +229,8 @@ class Scores(Resource):
         'player_id': 'UUID of the player making the request',
         'score': 'json formatted score to insert',
     })
+    @api.response(200, 'Score added')
+    @api.response(400, 'Invalid request')
     def post(self, gameid):
         data = self.parser.parse_args()
 
@@ -244,6 +276,8 @@ class Scores(Resource):
 
         return 200
 
+    @api.response(200, 'Score fetched')
+    @api.response(400, 'Invalid request')
     def get(self, gameid):
         # check if game exists
         try:
@@ -267,9 +301,26 @@ class Scores(Resource):
 
         return scores_dic_array
 
+    @api.response(200, 'Scores deleted')
+    @api.response(400, 'Invalid request')
+    def delete(self, gameid):
+        # check if game exists
+        try:
+            game = Game.get(id=gameid)
+        except peewee.DoesNotExist:
+            return "Game does not exist", 400
 
-@api.route('/game/<string:gameid>/<string:playerid>/score', methods=['GET'])
+        # delete all scores for the given game
+        Score.delete().where(Score.game == game).execute()
+
+        return "Scores deleted", 200
+
+
+@api.route('/game/<string:gameid>/<string:playerid>/score', methods=['GET', 'DELETE'])
 class PlayerScore(Resource):
+
+    @api.response(200, 'Score fetched')
+    @api.response(400, 'Invalid request')
     def get(self, gameid, playerid):
         # check if game exists
         try:
@@ -290,6 +341,30 @@ class PlayerScore(Resource):
             return "Score does not exist", 400
 
         return score.score
+
+    @api.response(200, 'Score deleted')
+    @api.response(400, 'Invalid request')
+    def delete(self, gameid, playerid):
+        # check if game exists
+        try:
+            game = Game.get(id=gameid)
+        except peewee.DoesNotExist:
+            return "Game does not exist", 400
+
+        # check if player exists
+        try:
+            player = Player.get(id=playerid)
+        except peewee.DoesNotExist:
+            return "Player does not exist", 400
+
+        # fetch the score for the given player and game
+        try:
+            score = Score.get(player=player, game=game)
+            score.delete_instance()
+        except peewee.DoesNotExist:
+            return "Score does not exist", 400
+
+        return "Score deleted", 200
 
 
 if __name__ == '__main__':
