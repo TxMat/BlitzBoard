@@ -1,6 +1,6 @@
 import pytest
 import json
-from Api.legacy_client import app
+from Api.client import app
 
 
 @pytest.fixture
