@@ -2,11 +2,22 @@ import json
 
 
 class Test:
-    def test_create_player_and_lobby(self, client):
-        response = client.post('/join', data={
-            "lobby_name": "Test Lobby 1",
-            "player_name": "Test Player 1",
-            "player_id": "player-1"
-        })
-        assert response.status_code == 404
 
+    def test_invalid_player_name(self, client, db):
+        response = client.post('/players', data={
+            "id": "1",
+            "name": "",
+        })
+        assert response.status_code == 400
+
+    def test_empty_body(self, client, db):
+        response = client.post('/players', data={
+        })
+        assert response.status_code == 400
+
+    def test_create_player(self, client, db):
+        response = client.post('/players', data={
+            "id": "1",
+            "name": "hugo",
+        })
+        assert response.status_code == 201
