@@ -28,13 +28,13 @@ class Config(BaseModel):
 
 
 class Game(BaseModel):
-    id = peewee.UUIDField(primary_key=True, unique=True)
+    id = peewee.IntegerField(primary_key=True, unique=True)
     name = peewee.CharField()
     config = peewee.ForeignKeyField(Config, backref='games')
 
 
 class Player(BaseModel):
-    id = peewee.UUIDField(primary_key=True, unique=True)
+    id = peewee.IntegerField(primary_key=True, unique=True)
     name = peewee.CharField()
 
 
@@ -53,6 +53,7 @@ class Score(BaseModel):
 class Players(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('id', type=str, location='form', required=True)
+    parser.add_argument('name', type=str, location='form', required=True)
 
     @api.expect(parser)
     @api.doc(params={
@@ -329,7 +330,7 @@ class Scores(Resource):
         scores = Score.select().where(Score.game == game)
 
         # sort the scores by the score value
-        scores = sorted(scores, key=lambda s: s.score, reverse=True)
+        # scores = sorted(scores, key=lambda s: s.score, reverse=True)
 
         # create a list of dictionaries with the player name and score
         scores_dic_array = []
