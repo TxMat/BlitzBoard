@@ -219,7 +219,7 @@ class Test:
         assert response.status_code == 400
 
     def test_create_game_with_invalid_config(self, client):
-        response = client.post('/games', data={
+        client.post('/games', data={
             "id": "1",
             "name": "Game 1",
             "config": "invalid",
@@ -882,7 +882,7 @@ class Test:
         assert response.status_code == 201
 
         # create game
-        response = client.post('/games', data={
+        client.post('/games', data={
             "id": "2",
             "name": "Game 2",
             "config": "{"
@@ -920,13 +920,13 @@ class Test:
         assert response.status_code == 200
         assert len(response.json) == 2
         assert response.json[0] == json.loads("{"
-                                                "\"intscore\" : 100,"
-                                                "\"ennemykilled\" : 0"
-                                                "}")
+                                              "\"intscore\" : 100,"
+                                              "\"ennemykilled\" : 0"
+                                              "}")
         assert response.json[1] == json.loads("{"
-                                                "\"game2score\" : 200,"
-                                                "\"ennemykilled\" : 0"
-                                                "}")
+                                              "\"game2score\" : 200,"
+                                              "\"ennemykilled\" : 0"
+                                              "}")
 
     def test_delete_all_player_scores(self, client):
         # create game
@@ -941,7 +941,7 @@ class Test:
         assert response.status_code == 201
 
         # create game
-        response = client.post('/games', data={
+        client.post('/games', data={
             "id": "2",
             "name": "Game 2",
             "config": "{"
@@ -1020,9 +1020,9 @@ class Test:
         # create score
         response = client.post('/games/1/scores/2', data={
             "score": "{"
-                        "\"intscore\" : 200,"
-                        "\"ennemykilled\" : 0"
-                        "}",
+                     "\"intscore\" : 200,"
+                     "\"ennemykilled\" : 0"
+                     "}",
         })
         assert response.status_code == 201
 
@@ -1038,7 +1038,3 @@ class Test:
         response = client.get('/games/1/scores')
         assert response.status_code == 200
         assert len(response.json) == 0
-
-
-
-

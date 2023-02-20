@@ -1,5 +1,4 @@
 import json
-import os
 
 import peewee
 from flask import Flask, jsonify

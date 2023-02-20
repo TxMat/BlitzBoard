@@ -1,9 +1,9 @@
 # conftest file for pytest to set up the test environment
 # we use the flask test client to make requests to the app
 # we initialize flask and peewee
-import os
 
 import pytest
+
 from Api import client as api
 
 
