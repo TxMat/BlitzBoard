@@ -17,7 +17,7 @@ api = Api(
 
 class Database:
     def __init__(self):
-        self.db = peewee.SqliteDatabase('blitzboard.db')
+        self.db = peewee.SqliteDatabase('db/blitzboard.db')
         self.db.connect()
 
     def create_db(self):
