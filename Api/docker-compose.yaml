@@ -1,6 +1,6 @@
 services:
   flask:
-    container_name: flask_container
+    container_name: blitzboard-flask
     build:
       context: .
       dockerfile: Dockerfile
