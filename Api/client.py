@@ -55,6 +55,11 @@ class Game(BaseModel):
             "name": self.name,
             "config": self.config.template
         }
+    def to_dic_without_config(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+        }
 
 
 class Player(BaseModel):
@@ -113,8 +118,6 @@ class Players(Resource):
 
         return "Player created", 201
 
-    parser.add_argument('name', type=str, location='form', required=True)
-
     def get(self):
         players = Player.select()
         players_dic_array = []
@@ -140,7 +143,9 @@ class PlayerScores(Resource):
         scores = Score.select().where(Score.player == player)
         scores_dic_array = []
         for score in scores:
-            scores_dic_array.append(score.score)
+            current_score = score.game.to_dic_without_config()
+            current_score["data"] = score.score
+            scores_dic_array.append(current_score)
 
         return jsonify(scores_dic_array)
 
