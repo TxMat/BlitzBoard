@@ -41,7 +41,7 @@ class BaseModel(peewee.Model):
 
 class Config(BaseModel):
     template = JSONField()
-    weight_list = JSONField(null=True)
+    keep_lower_scores = peewee.BooleanField(default=False)
 
 
 class Game(BaseModel):
@@ -55,6 +55,7 @@ class Game(BaseModel):
             "name": self.name,
             "config": self.config.template
         }
+
     def to_dic_without_config(self):
         return {
             "id": self.id,
@@ -81,7 +82,8 @@ class PlayerGame(BaseModel):
 class Score(BaseModel):
     player = peewee.ForeignKeyField(Player, backref='scores')
     game = peewee.ForeignKeyField(Game, backref='scores')
-    score = JSONField()
+    json_score = JSONField()
+    hidden_score = peewee.IntegerField()
 
 
 Database.create_db()
@@ -144,7 +146,7 @@ class PlayerScores(Resource):
         scores_dic_array = []
         for score in scores:
             current_score = score.game.to_dic_without_config()
-            current_score["data"] = score.score
+            current_score["data"] = score.json_score
             scores_dic_array.append(current_score)
 
         return jsonify(scores_dic_array)
@@ -243,11 +245,30 @@ class Games(Resource):
         try:
             json.loads(config)
         except ValueError:
-            return "Invalid config", 400
+            return "Invalid config, not valid json", 400
+
+        if "template" not in config:
+            return "Invalid config, no template", 400
+
+        # check if name and weight are in template
+        for key in config["template"]:
+            if "name" not in config["template"][key] or "weight" not in config["template"][key]:
+                return "Invalid config, name or weight not in template item", 400
+
+        keep_lower_score = config["keep_lower_score"] if "keep_lower_score" in config else False
+
+        # check if template is valid
+        # sum all weights and check if they are 1
+        sum_weights = 0
+        for key in config["template"]:
+            sum_weights += config["template"][key]["weight"]
+
+        if sum_weights != 1:
+            return "Invalid config, sum of weights is not 1", 400
 
         # check if game already exists if not create it
         try:
-            config = Config.create(template=config)
+            config = Config.create(template=config, keep_lower_score=keep_lower_score)
             Game.create(id=game_id, name=name, config=config)
         except peewee.IntegrityError:
             return "Game already exists", 409
@@ -342,7 +363,7 @@ class Scores(Resource):
             return "Game does not exist", 404
 
         # fetch all scores for the given game
-        scores = Score.select().where(Score.game == game)
+        scores = Score.select().where(Score.game == game).order_by(Score.hidden_score.desc())
 
         # sort the scores by the score value
         # scores = sorted(scores, key=lambda s: s.score, reverse=True)
@@ -352,7 +373,7 @@ class Scores(Resource):
         for score in scores:
             scores_dic_array.append({
                 "name": score.player.name,
-                "score": score.score
+                "score": score.json_score
             })
 
         return scores_dic_array
@@ -398,7 +419,7 @@ class PlayerScore(Resource):
         except peewee.DoesNotExist:
             return "No scores found", 404
 
-        return score.score
+        return score.json_score
 
     @api.expect(parser)
     @api.doc(params={
@@ -413,7 +434,7 @@ class PlayerScore(Resource):
         try:
             score = json.loads(data["score"])
         except json.decoder.JSONDecodeError:
-            return "Invalid score", 400
+            return "Invalid score, must be json", 400
 
         if not (gameid and playerid and score):
             return "Invalid request", 400
@@ -426,9 +447,9 @@ class PlayerScore(Resource):
             return "Player or game does not exist", 404
 
         # check if given score has the same json keys as the config
-        config = json.loads(game.config.template)
-        if not all(key in config for key in score):
-            return "Invalid score", 400
+        score_config = json.loads(game.config.template["template"])
+        if not all(key in score_config["name"] for key in score):
+            return "Invalid score, must have the same keys as the config", 400
 
         # check if player has already played the game
         # if not add the player to the game
@@ -437,17 +458,26 @@ class PlayerScore(Resource):
         except peewee.DoesNotExist:
             PlayerGame.create(player=player, game=game)
 
+        # calculate hidden score usding the config weights and the given score
+        hidden_score = 0
+        for key in score:
+            hidden_score += score[key] * score_config["template"][key]["weight"]
+
         # fetch player scores for the given game if any
-        try:
-            # using the config template compare the current score with the previous score
-            # if the current score is better update the score
-            player_score = Score.get(player=player, game=game)
-            for key in json.loads(game.config.template):
-                if score[key] > player_score.score[key]:
-                    player_score.score = score
+        if not score_config["keep_worse_scores"]:
+            try:
+                # using the config template compare the current score with the previous score
+                # if the current score is better update the score
+                player_score = Score.get(player=player, game=game)
+                if hidden_score > player_score.hidden_score:
+                    player_score.json_score = score
+                    player_score.hidden_score = hidden_score
                     player_score.save()
                     return "Score updated", 200
-        except peewee.DoesNotExist:
+            except peewee.DoesNotExist:
+                Score.create(player=player, game=game, score=score)
+                return "Score added", 201
+        else:
             Score.create(player=player, game=game, score=score)
             return "Score added", 201
 

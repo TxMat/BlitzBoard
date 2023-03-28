@@ -161,10 +161,16 @@ class Test:
         response = client.post('/games', data={
             "id": "1",
             "name": "Game 1",
-            "config": "{"
-                      "\"intscore\" : 0,"
-                      "\"ennemykilled\" : 0"
-                      "}",
+            "config": """
+                      {
+  "template" : {
+    {"name" : "score", "weight" : 0.8, "type" : "int"},
+    {"name" : "player_name", "weight" : 0, "type" : "str"},
+    {"name" : "nb_ennemis", "weight" : 0.2, "type" : "int"},
+  },
+  "keep_worse_scores" : true
+}
+                      """,
         })
         assert response.status_code == 201
 
