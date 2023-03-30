@@ -173,7 +173,7 @@ class Players(Resource):
 
         p = Player.create(name=name)
 
-        return {"id": str(p.id)}, 201
+        return str(p.id), 201
 
     def get(self):
         players = Player.select()
