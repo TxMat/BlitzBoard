@@ -16,6 +16,8 @@ api = Api(
     version="0.0.1"
 )
 
+MAX_INT = 2147483647
+
 
 class Database:
     def __init__(self):
@@ -45,6 +47,8 @@ class Config(BaseModel):
     template = JSONField()
     keep_lower_scores = peewee.BooleanField(default=False)
     allow_ties = peewee.BooleanField(default=False)
+    auto_calculate_score = peewee.BooleanField(default=False)
+    priority_mode = peewee.BooleanField(default=False)
 
     def to_dic(self):
         return {
@@ -109,10 +113,23 @@ def check_config(config):
     if "template" not in config:
         return False, "Invalid config, no template", 400
 
-    # check if name and weight are in template
+    priority_mode = config["priority_mode"] if "priority_mode" in config else False
+
+    # check if name and (weight or priority) are in template
+    # xor check if weight or priority is in template
     for key in config["template"]:
-        if "weight" not in config["template"][key]:
-            return False, "Invalid config, name or weight not in template item", 400
+        if ("weight" not in config["template"][key] or (
+                priority_mode and "priority" not in config["template"][key])):
+            return False, "Invalid config, name, weight or priority not in template item", 400
+
+    # check type of weight and priority and name
+    for key in config["template"]:
+        if "weight" in config["template"][key]:
+            if not isinstance(config["template"][key]["weight"], float):
+                return False, "Invalid config, weight is not float", 400
+        if "priority" in config["template"][key]:
+            if not isinstance(config["template"][key]["priority"], int):
+                return False, "Invalid config, priority is not int", 400
 
     sum_weights = 0
     for key in config["template"]:
@@ -124,10 +141,15 @@ def check_config(config):
     keep_lower_scores = config["keep_lower_scores"] if "keep_lower_scores" in config else False
 
     allow_ties = config["allow_ties"] if "allow_ties" in config else True
+
+    auto_calculate_score = config["auto_calculate_score"] if "auto_calculate_score" in config else False
+
     return True, {
         "template": config["template"],
         "keep_lower_scores": keep_lower_scores,
-        "allow_ties": allow_ties
+        "allow_ties": allow_ties,
+        "auto_calculate_score": auto_calculate_score,
+        "priority_mode": priority_mode
     }
 
 
@@ -286,7 +308,8 @@ class Games(Resource):
         # check if game already exists if not create it
         try:
             config = Config.create(template=config["template"], keep_lower_scores=config["keep_lower_scores"],
-                                   allow_ties=config["allow_ties"])
+                                   allow_ties=config["allow_ties"], auto_calculate_score=config["auto_calculate_score"],
+                                   priority_mode=config["priority_mode"])
             Game.create(name=name, config=config)
         except peewee.IntegrityError:
             return "Game already exists", 409
@@ -359,7 +382,8 @@ class GameId(Resource):
             config: dict = result[1]
 
         # update game
-        if config["template"] == game.config.template and config["keep_lower_scores"] == game.config.keep_lower_scores and \
+        if config["template"] == game.config.template and config[
+            "keep_lower_scores"] == game.config.keep_lower_scores and \
                 config["allow_ties"] == game.config.allow_ties:
             return "Game not updated", 200
         else:
@@ -423,7 +447,7 @@ class Scores(Resource):
 @api.route('/games/<string:game_name>/scores/<string:playerid>', methods=['GET', 'POST', 'DELETE'])
 class PlayerScore(Resource):
     parser = reqparse.RequestParser()
-    parser.add_argument('score', type=str, location='form', required=True)
+    parser.add_argument('score', type=str, location='json', required=True)
 
     @api.response(200, 'Score fetched')
     @api.response(404, 'Game, Player or Score does not exist')
@@ -461,9 +485,6 @@ class PlayerScore(Resource):
         })
 
     @api.expect(parser)
-    @api.doc(params={
-        'score': 'json formatted score to insert',
-    })
     @api.response(201, 'Score added')
     @api.response(400, 'Invalid request')
     @api.response(404, 'Player or game does not exist')
@@ -497,18 +518,31 @@ class PlayerScore(Resource):
         except peewee.DoesNotExist:
             PlayerGame.create(player=player, game=game)
 
-        # calculate hidden score usding the config weights and the given score
+        # calculate hidden score using the config weights and the given score
         hidden_score = 0
         try:
             for key in score:
-                if score_config[key]["weight"] == 0:
-                    continue
-                if score_config[key]["type"] == "int":
-                    hidden_score += int(score[key]) * float(score_config[key]["weight"])
-                elif score_config[key]["type"] == "float":
-                    hidden_score += float(score[key]) * float(score_config[key]["weight"])
+                if game.config.priority_mode:
+                    if score_config[key]["priority"] == 1:
+                        if score_config[key]["desc"]:
+                            hidden_score += MAX_INT - int(score[key])
+                        else:
+                            hidden_score += int(score[key])
                 else:
-                    continue
+                    if score_config[key]["weight"] == 0:
+                        continue
+                    if score_config[key]["type"] == "int":
+                        if score_config[key]["desc"]:
+                            hidden_score += MAX_INT - int(score[key]) * float(score_config[key]["weight"])
+                        else:
+                            hidden_score += int(score[key]) * float(score_config[key]["weight"])
+                    elif score_config[key]["type"] == "float":
+                        if score_config[key]["desc"]:
+                            hidden_score += MAX_INT - float(score[key]) * float(score_config[key]["weight"])
+                        else:
+                            hidden_score += float(score[key]) * float(score_config[key]["weight"])
+                    else:
+                        continue
         except ValueError:
             return "Invalid score, must be int or float", 400
 

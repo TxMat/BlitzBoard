@@ -7,7 +7,7 @@ CONFIG = {
             "type": "int"
         },
         "text_lol": {
-            "weight": 0,
+            "weight": 0.0,
             "type": "str"
         },
         "nb_ennemis": {
@@ -26,7 +26,7 @@ CONFIG_KEEP_LOWER_AND_DONT_ALLOW_TIES = {
             "type": "int"
         },
         "text_lol": {
-            "weight": 0,
+            "weight": 0.0,
             "type": "str"
         },
         "nb_ennemis": {
