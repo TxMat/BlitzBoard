@@ -119,8 +119,7 @@ def check_config(config):
     # check if name and (weight or priority) are in template
     # xor check if weight or priority is in template
     for key in config["template"]:
-        if ("weight" not in config["template"][key] or (
-                priority_mode and "priority" not in config["template"][key])):
+        if (priority_mode and "priority" not in config["template"][key]) or (not priority_mode and "weight" not in config["template"][key]):
             return False, "Invalid config, name, weight or priority not in template item", 400
 
     # check type of weight and priority and name
@@ -131,13 +130,13 @@ def check_config(config):
         if "priority" in config["template"][key]:
             if not isinstance(config["template"][key]["priority"], int):
                 return False, "Invalid config, priority is not int", 400
+    if not priority_mode:
+        sum_weights = 0
+        for key in config["template"]:
+            sum_weights += config["template"][key]["weight"]
 
-    sum_weights = 0
-    for key in config["template"]:
-        sum_weights += config["template"][key]["weight"]
-
-    if sum_weights != 1:
-        return False, "Invalid config, sum of weights is not 1", 400
+        if sum_weights != 1:
+            return False, "Invalid config, sum of weights is not 1", 400
 
     keep_lower_scores = config["keep_lower_scores"] if "keep_lower_scores" in config else False
 
@@ -282,7 +281,6 @@ class Games(Resource):
     @api.expect(parser)
     @api.doc(params={
         'name': 'Name of the game',
-        'config': 'json formatted config for the game',
     })
     @api.response(201, 'Game created')
     @api.response(409, 'Game already exists')
