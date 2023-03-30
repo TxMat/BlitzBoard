@@ -156,12 +156,9 @@ def check_config(config):
 @api.route('/players', methods=['GET', 'POST'])
 class Players(Resource):
     parser = reqparse.RequestParser()
-    parser.add_argument('name', type=str, location='form', required=True)
+    parser.add_argument('name', type=str, location='json', required=True)
 
     @api.expect(parser)
-    @api.doc(params={
-        'name': 'Name of the player',
-    })
     @api.response(201, 'Player created.\n'
                        'Returns the newly created player uuid.',
                   fields.String(example="3fc75ba7-1090-4125-9529-616000f41693"))

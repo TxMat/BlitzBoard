@@ -64,7 +64,7 @@ def check_score(client, g_id, p_id, score,  rank=1):
 
 
 def create_player(client, name, rc=201):
-    response = client.post('/players', data={
+    response = client.post('/players', json={
         "name": name,
     })
     assert response.status_code == rc
