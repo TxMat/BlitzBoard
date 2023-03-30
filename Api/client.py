@@ -2,6 +2,7 @@ import json
 import uuid
 from typing import Any
 
+import flask
 import peewee
 from flask import Flask, jsonify
 from flask_restx import Api, Resource, reqparse, fields
@@ -396,7 +397,6 @@ class GameId(Resource):
 class Scores(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('player_id', type=str, location='form', required=True)
-    parser.add_argument('score', type=str, location='form', required=True)
 
     @api.response(200, 'Score fetched')
     @api.response(404, 'Game does not exist')
@@ -426,7 +426,7 @@ class Scores(Resource):
 
         return scores_dic_array
 
-    @api.response(200, 'Scores deleted')
+    @api.response(204, 'Scores deleted')
     @api.response(404, 'Game does not exist')
     def delete(self, game_name):
         # check if game exists
