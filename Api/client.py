@@ -486,9 +486,13 @@ class PlayerScore(Resource):
     def post(self, game_name, playerid):
         data = self.parser.parse_args()
 
+        score = data["score"]
+
         try:
-            score = json.loads(data["score"])
-        except json.decoder.JSONDecodeError:
+            score = score.replace("\'", "\"")
+            score = json.loads(score)
+        except json.decoder.JSONDecodeError as e:
+            print(e)
             return "Invalid score, must be json", 400
 
         if not (game_name and playerid and score):
@@ -586,4 +590,4 @@ class PlayerScore(Resource):
 
 if __name__ == '__main__':
     # Threaded option to enable multiple instances for multiple user access support
-    app.run(host="127.0.0.1", threaded=True, port=5000)
+    app.run(host="127.0.0.1", threaded=True, port=80)
